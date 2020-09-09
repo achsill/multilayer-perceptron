@@ -7,18 +7,10 @@ import sys
 from utils import *
 
 np.random.seed(0)
-# X, y = datasets.make_moons(200, noise=0.20)
-
 
 # Import Data
 df = pd.read_csv('data.csv')
 
-bar_color = {"Ravenclaw": "#2980b9",
-            "Slytherin": "#27ae60",
-            "Gryffindor": "#c0392b",
-            "Hufflepuff": "#f1c40f"}
-
-# print(len(df.columns))
 i = 0
 header = []
 while i < len(df.columns):
@@ -33,23 +25,26 @@ while i < len(df.columns):
 df.columns = header
 index = df['Index']
 state = df['State']
+test = pd.get_dummies(state)
+print('t dummy la ?:', test)
 df = df.drop(columns=['Index', 'State'])
 df = ((df-df.min())/(df.max()-df.min()))
 df['Index'] = index
 # End import Data
 
-X = np.array(df[['Col-25', 'Col-29', 'Col-9', 'Col-24', 'Col-12', 'Col-4', 'Col-2', 'Col-5']])
+X = np.array(df[['Col-25', 'Col-29', 'Col-9', 'Col-24', 'Col-12']])
 # print(X)
 # print(df)
 # print(state)
-y = []
-for i in range(0, len(state)):
-    if (state[i] == 'M'):
-        y.append(1)
-    elif (state[i] == 'B'):
-        y.append(0)
-
-y = np.array(y)
+# y = []
+# for i in range(0, len(state)):
+#     if (state[i] == 'M'):
+#         y.append(1)
+#     elif (state[i] == 'B'):
+#         y.append(0)
+#
+# y = np.array(y)
+y = np.array(pd.get_dummies(state))
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, train_size=0.9, shuffle=True)
 
 # print('____LA_____')
@@ -66,7 +61,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, train_s
 # print(y)
 
 num_examples = len(X_train) # training set size
-nn_input_dim = 8 # input layer dimensionality
+nn_input_dim = 5 # input layer dimensionality
 nn_output_dim = 2 # output layer dimensionality
 
 # Gradient descent parameters (I picked these by hand)
@@ -127,33 +122,43 @@ def cross_ent(model, y, x):
     # Forward propagation
     z1 = x.dot(W1) + b1
     a1 = sigmoid(z1)
+
     z2 = a1.dot(W2) + b2
     exp_scores = np.exp(z2)
     # print("______________")
     a = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
-    print(a)
     # print("______________")
     # print(a.T[0])
     # print("______________")
     # print(a.T[1])
     # print("______________")
-    if 0 in a.T[1]:
-        print('STOP:')
-        print(a.T[1][a.count(0)])
-        exit(1)
+
     # return np.sum(np.nan_to_num(-y*np.log(a.T[1])-(1-y)*np.log((1-(a.T[1])))))
-    try:
-        rez = -(1 / num_examples) * np.sum(np.nan_to_num(np.dot(y, np.log(a.T[1]) - np.dot(1 - y, np.log(1 - (a.T[1]))))))
-    except:
-        rez = 0
-    return rez
+    # print('LA GROS:')
+    # print(y)
+    # print('NN LA GROS:')
+    # print(a)
+    # print('_____s')
+    # print(y * np.log(a))
+    # print('___________')
+    # print((1 - y) * np.log(1 - (a)))
+    # print('___________')
+    # print(y * np.log(a) + (1 - y) * np.log(1 - a))
+    # print('__result___')
+    rez = -(1 / num_examples) * np.sum(y * np.log(a) + (1 - y) * np.log(1 - (a)))
+
+    # rez = -(1 / num_examples) * np.sum(np.dot(y, np.log(a.T[1])) + np.dot(1 - y, np.log(1 - (a.T[1]))))
+
+    return np.array(rez)
 
 
 # This function learns parameters for the neural network and returns the model.
 # - nn_hdim: Number of nodes in the hidden layer
 # - num_passes: Number of passes through the training data for gradient descent
 # - print_loss: If True, print the loss every 1000 iterations
-def build_model(nn_hdim, num_passes=200000, print_loss=False):
+
+
+def build_model(nn_hdim, num_passes=20000, print_loss=False):
 
     # Initialize the parameters to random values. We need to learn these.
     np.random.seed(0)
@@ -170,40 +175,37 @@ def build_model(nn_hdim, num_passes=200000, print_loss=False):
 
         # Forward propagation
         z1 = X_train.dot(W1) + b1
-        # print('z1: ', z1)
         a1 = sigmoid(z1)
-        # print('a1: ', a1)
-        # print('W2: ', W2)
-        z2 = a1.dot(W2) + b2
-        # print('z2: ', z2)
-        exp_scores = np.exp(z2)
-        probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
 
+        z2 = a1.dot(W2) + b2
+        delta3 = softmax(z2)
 
         # print('probs: ', probs)
         # Backpropagation
-        delta3 = probs
         # print('_______')
         # print(delta3)
-        delta3[range(num_examples), y_train] -= 1
-        delta3 = delta3 / num_examples
+        # delta3[range(num_examples), y_train] -= 1
+        # delta3 = delta3 / num_examples
+        delta3 = delta3 - y_train
         # print(delta3)
         # print('_______')
         dW2 = (a1.T).dot(delta3)
+
         db2 = np.sum(delta3, axis=0, keepdims=True)
-        delta2 = delta3.dot(W2.T) * dSigmoid(a1)
+
+        delta2 = delta3.dot(W2.T) * dSigmoid(z1)
         dW1 = np.dot(X_train.T, delta2)
         db1 = np.sum(delta2, axis=0)
 
         # Add regularization terms (b1 and b2 don't have regularization terms)
-        dW2 += reg_lambda * W2
-        dW1 += reg_lambda * W1
+        # dW2 += reg_lambda * W2
+        # dW1 += reg_lambda * W1
 
         # Gradient descent parameter update
-        W1 += -epsilon * dW1
-        b1 += -epsilon * db1
-        W2 += -epsilon * dW2
-        b2 += -epsilon * db2
+        W1 -= epsilon * dW1
+        b1 -= epsilon * db1
+        W2 -= epsilon * dW2
+        b2 -= epsilon * db2
 
         # Assign new parameters to the model
         model = { 'W1': W1, 'b1': b1, 'W2': W2, 'b2': b2}
@@ -211,7 +213,7 @@ def build_model(nn_hdim, num_passes=200000, print_loss=False):
         # Optionally print the loss.
         # This is expensive because it uses the whole dataset, so we don't want to do it too often.
         if print_loss and i % 1000 == 0:
-            print("Loss: ", i, " - ", calculate_loss(model), '- and - ', cross_ent(model, y_train, X_train))
+            print("Loss: ", i , '-', cross_ent(model, y_train, X_train))
             # print("Loss: ", i, " - ", calculate_loss(model))
             # print("Loss: ", i, " - ", cross_ent(model, y_train))
 
@@ -219,15 +221,15 @@ def build_model(nn_hdim, num_passes=200000, print_loss=False):
 
 
 # Build a model with a 3-dimensional hidden layer
-model = build_model(12, print_loss=True)
+model = build_model(9, print_loss=True)
 leX = np.array([[1, 0], [0, 1], [0, 0], [1, 1]])
 # print(lambda x: predict(model, x))
 
 print(predict(model, X_test))
-print(y_test)
+print('__________')
+print(np.argmax(y_test, axis=1))
 
-print(cross_ent(model, y_test, X_test))
-# print(cross_ent(predict(model, X_test), y_test))
+print('cost = ', cross_ent(model, y_test, X_test))
 # Plot the decision boundary
 # plot_decision_boundary(predict(model, X_test))
 # plt.title("Decision Boundary for hidden layer size 3")
