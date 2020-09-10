@@ -102,13 +102,16 @@ def calculate_loss(model):
 # Helper function to predict an output (0 or 1)
 def predict(model, x):
     np.set_printoptions(threshold=sys.maxsize)
-    W1, b1, W2, b2 = model['W1'], model['b1'], model['W2'], model['b2']
+    W1, b1, W2, b2, W3, b3 = model['W1'], model['b1'], model['W2'], model['b2'], model['W3'], model['b3']
     # Forward propagation
     z1 = x.dot(W1) + b1
     a1 = sigmoid(z1)
+
     z2 = a1.dot(W2) + b2
-    exp_scores = np.exp(z2)
-    probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
+    a2 = sigmoid(z2)
+
+    z3 = a2.dot(W3) + b3
+    probs = softmax(z3)
     # print('________')
     # print(probs)
     # print('________')
@@ -118,15 +121,18 @@ def predict(model, x):
 def cross_ent(model, y, x):
     # a = a + 1e-15s
     np.set_printoptions(threshold=sys.maxsize)
-    W1, b1, W2, b2 = model['W1'], model['b1'], model['W2'], model['b2']
+    W1, b1, W2, b2, W3, b3 = model['W1'], model['b1'], model['W2'], model['b2'], model['W3'], model['b3']
     # Forward propagation
     z1 = x.dot(W1) + b1
     a1 = sigmoid(z1)
 
     z2 = a1.dot(W2) + b2
-    exp_scores = np.exp(z2)
+    a2 = sigmoid(z2)
+
+    z3 = a2.dot(W3) + b3
+    a = softmax(z3)
     # print("______________")
-    a = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
+    # a = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
     # print("______________")
     # print(a.T[0])
     # print("______________")
@@ -157,6 +163,10 @@ def cross_ent(model, y, x):
 # - num_passes: Number of passes through the training data for gradient descent
 # - print_loss: If True, print the loss every 1000 iterations
 
+def fw(x, w, b, activation_function):
+    z = np.dot(x, w) + b
+    a = activation_function(z)
+    return a
 
 def build_model(nn_hdim, num_passes=20000, print_loss=False):
 
@@ -164,8 +174,10 @@ def build_model(nn_hdim, num_passes=20000, print_loss=False):
     np.random.seed(0)
     W1 = np.random.randn(nn_input_dim, nn_hdim) / np.sqrt(nn_input_dim)
     b1 = np.zeros((1, nn_hdim))
-    W2 = np.random.randn(nn_hdim, nn_output_dim) / np.sqrt(nn_hdim)
-    b2 = np.zeros((1, nn_output_dim))
+    W2 = np.random.randn(nn_hdim, nn_hdim) / np.sqrt(nn_hdim)
+    b2 = np.zeros((1, nn_hdim))
+    W3 = np.random.randn(nn_hdim, nn_output_dim) / np.sqrt(nn_hdim)
+    b3 = np.zeros((1, nn_output_dim))
 
     # This is what we return at the end
     model = {}
@@ -176,9 +188,16 @@ def build_model(nn_hdim, num_passes=20000, print_loss=False):
         # Forward propagation
         z1 = X_train.dot(W1) + b1
         a1 = sigmoid(z1)
+        # print(a1, '___________s1')
 
         z2 = a1.dot(W2) + b2
-        delta3 = softmax(z2)
+        a2 = sigmoid(z2)
+        # print(a2, '___________s2')
+
+        z3 = a2.dot(W3) + b3
+        delta3 = softmax(z3)
+        # print(delta3, '___________s3')
+
 
         # print('probs: ', probs)
         # Backpropagation
@@ -186,29 +205,89 @@ def build_model(nn_hdim, num_passes=20000, print_loss=False):
         # print(delta3)
         # delta3[range(num_examples), y_train] -= 1
         # delta3 = delta3 / num_examples
-        delta3 = delta3 - y_train
+        # delta3 = dCrossEntropy(delta3, y_train)
         # print(delta3)
         # print('_______')
-        dW2 = (a1.T).dot(delta3)
+        # dW3 = np.dot(a2.T, delta3)
+        # db3 = np.sum(delta3, axis=0, keepdims=True)
 
-        db2 = np.sum(delta3, axis=0, keepdims=True)
 
-        delta2 = delta3.dot(W2.T) * dSigmoid(z1)
-        dW1 = np.dot(X_train.T, delta2)
-        db1 = np.sum(delta2, axis=0)
+
+# BackPropagation on reessaie
+
+        # print('LA:', delta3)
+        activation_o = dCrossEntropy(delta3, y_train)
+        i_err3 = np.dot(activation_o, W3.T)
+        w_err3 = np.dot(a2.T, activation_o)
+        W3 -= epsilon * w_err3
+        b3 -= epsilon * np.sum(activation_o, axis=0, keepdims=True)
+
+        activation_h2 = dSigmoid(z2) * i_err3
+        i_err2 = np.dot(activation_h2, W2.T)
+        w_err2 = np.dot(a1.T, activation_h2)
+        W2 -= epsilon * w_err2
+        b2 -= epsilon * np.sum(activation_h2, axis=0, keepdims=True)
+
+        activation_h1 = dSigmoid(z2) * i_err2
+        i_err1 = np.dot(activation_h1, W1.T)
+        w_err1 = np.dot(X_train.T, activation_h1)
+        W1 -= epsilon * w_err1
+        b1 -= epsilon * np.sum(activation_h1, axis=0, keepdims=True)
+
+
+
+
+# BackPropagation on reessaie
+
+
+
+
+        # o3_error = dCrossEntropy(delta3, y_train)
+        # i3_error = np.dot(o3_error, W3.T)
+        # w3_error = np.dot(a2.T, o3_error)
+        # W3 -= epsilon * w3_error
+        # b3 -= epsilon * np.sum(o3_error, axis=0, keepdims=True)
+        #
+        # o2_error = dSigmoid(z2)
+        # i2_error = np.dot(o2_error, W2.T)
+        # w2_error = np.dot(a1.T, o2_error)
+        # W2 -= epsilon * w2_error
+        # b2 -= epsilon * np.sum(o2_error, axis=0)
+        #
+        # o1_error = dSigmoid(z1)
+        # i1_error = np.dot(o1_error, W1.T)
+        # w1_error = np.dot(X_train.T, o1_error)
+        # W1 -= epsilon * w1_error
+        # b1 -= epsilon * np.sum(o1_error, axis=0)
+
+        # delta1 = np.dot(delta3, W2.T) * dSigmoid(z2)
+        # dW1 = np.dot(a1.T, delta1)
+        # db1 = np.sum(delta1, axis=0)
+
+
+
+        # delta2 = np.dot(delta3, W3.T) * dSigmoid(z2)
+        # dW2 = np.dot(a1.T, delta2)
+        # db2 = np.sum(delta2, axis=0, keepdims=True)
+        #
+        # delta1 = np.dot(delta2, W2.T) * dSigmoid(z1)
+        # dW1 = np.dot(X_train.T, delta1)
+        # db1 = np.sum(delta1, axis=0)
 
         # Add regularization terms (b1 and b2 don't have regularization terms)
         # dW2 += reg_lambda * W2
         # dW1 += reg_lambda * W1
 
         # Gradient descent parameter update
-        W1 -= epsilon * dW1
-        b1 -= epsilon * db1
-        W2 -= epsilon * dW2
-        b2 -= epsilon * db2
+        # W1 -= epsilon * dW1
+        # b1 -= epsilon * db1
+        # W2 -= epsilon * dW2
+        # b2 -= epsilon * db2
+        # W3 -= epsilon * dW3
+        # b3 -= epsilon * db3
 
         # Assign new parameters to the model
-        model = { 'W1': W1, 'b1': b1, 'W2': W2, 'b2': b2}
+        model = { 'W1': W1, 'b1': b1, 'W2': W2, 'b2': b2, 'W3': W3, 'b3': b3}
 
         # Optionally print the loss.
         # This is expensive because it uses the whole dataset, so we don't want to do it too often.
@@ -221,7 +300,7 @@ def build_model(nn_hdim, num_passes=20000, print_loss=False):
 
 
 # Build a model with a 3-dimensional hidden layer
-model = build_model(9, print_loss=True)
+model = build_model(10, print_loss=True)
 leX = np.array([[1, 0], [0, 1], [0, 0], [1, 1]])
 # print(lambda x: predict(model, x))
 
