@@ -30,7 +30,6 @@ class Layer():
             output_derivative = self.activation_prime(self.output) * output_error
         else:
             output_derivative = self.activation_prime(self.output_activated, y)
-
         input_error = np.dot(output_derivative, self.weights.T)
         if (len(self.activated_input) != 0):
             weights_error = np.dot(self.activated_input.T, output_derivative)
@@ -62,7 +61,7 @@ def process_file():
 
     X = np.array(df[['Col-25', 'Col-29', 'Col-9', 'Col-24', 'Col-12']])
     y = np.array(pd.get_dummies(state))
-    return train_test_split(X, y, test_size=0.2, train_size=0.8, shuffle=True)
+    return train_test_split(X, y, test_size=0.1, train_size=0.9, shuffle=True)
 
 X_train, X_test, y_train, y_test = process_file()
 lsl = len(X_train)
@@ -72,8 +71,8 @@ def cost(layers, x, y):
     output_activated = []
     for layer in layers:
         output_activated, output = layer.forward_propagation(output, output_activated)
-    rez = -(1 / lsl) * np.sum(y * np.log(output_activated) + (1 - y) * np.log(1 - (output_activated)))
-    print('Cost = ', rez)
+    rez = -(1 / lsl) * np.sum(np.nan_to_num(y * np.log(output_activated + 1e-15) + (1 - y) * np.log(1 - (output_activated + 1e-15))))
+    return rez
 
 def predict(layers):
 
@@ -81,16 +80,17 @@ def predict(layers):
     output_activated = []
     for layer in layers:
         output_activated, output = layer.forward_propagation(output, output_activated)
-    print(np.argmax(output, axis=1))
-    print(np.argmax(y_test, axis=1))
+    # print(np.argmax(output, axis=1))
+    # print(np.argmax(y_test, axis=1))
 
-def train(nn_hdim, num_passes=40000, print_loss=False):
+def train(nn_hdim, num_passes=20000, print_loss=False):
 
     layers = []
     layers.append(Layer(5, nn_hdim, sigmoid, dSigmoid))
     layers.append(Layer(nn_hdim, nn_hdim, sigmoid, dSigmoid))
     layers.append(Layer(nn_hdim, 2, softmax, dCrossEntropy))
-
+    training_cost = []
+    validate_cost = []
     for i in range(0, num_passes):
         output_activated = []
         output = X_train
@@ -103,10 +103,19 @@ def train(nn_hdim, num_passes=40000, print_loss=False):
             else:
                 error = layers[length - 1].backward_propagation(error, 0.01, None, False)
             length -= 1
-        if (i % 1000 == 0):
-            cost(layers, X_train, y_train)
+        # print('Epoch: ', i, '/', num_passes, ' - Training Cost = ', cost(layers, X_train, y_train), ' - Validation Cost = ',  cost(layers, X_test, y_test))
+        if (i >= 1000):
+            training_error = cost(layers, X_train, y_train)
+            validate_error = cost(layers, X_test, y_test)
+            training_cost.append(training_error)
+            validate_cost.append(validate_error)
+            # if (i % 1000 == 0):
+            print('Epoch: ', i, '/', num_passes, 'TC =', training_error, 'VC =', validate_error)
     predict(layers)
-    cost(layers, X_test, y_test)
+    return training_cost, validate_cost
 
 
-train(9)
+training_errors, validate_errors = train(9)
+plt.plot(training_errors)
+plt.plot(validate_errors)
+plt.show()
