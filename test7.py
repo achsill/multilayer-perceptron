@@ -45,7 +45,7 @@ X = np.array(df[['Col-25', 'Col-29', 'Col-9', 'Col-24', 'Col-12']])
 #
 # y = np.array(y)
 y = np.array(pd.get_dummies(state))
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, train_size=0.9, shuffle=True)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, train_size=0.8, shuffle=True)
 
 # print('____LA_____')
 # print(X_train)
@@ -151,7 +151,7 @@ def cross_ent(model, y, x):
     # print('___________')
     # print(y * np.log(a) + (1 - y) * np.log(1 - a))
     # print('__result___')
-    rez = -(1 / num_examples) * np.sum(y * np.log(a) + (1 - y) * np.log(1 - (a)))
+    rez = -(1 / num_examples) * np.sum(y * np.log(a + 1e-15) + (1 - y) * np.log(1 - (a + 1e-15)))
 
     # rez = -(1 / num_examples) * np.sum(np.dot(y, np.log(a.T[1])) + np.dot(1 - y, np.log(1 - (a.T[1]))))
 
@@ -168,7 +168,7 @@ def fw(x, w, b, activation_function):
     a = activation_function(z)
     return a
 
-def build_model(nn_hdim, num_passes=20000, print_loss=False):
+def build_model(nn_hdim, num_passes=40000, print_loss=False):
 
     # Initialize the parameters to random values. We need to learn these.
     np.random.seed(0)
@@ -220,19 +220,19 @@ def build_model(nn_hdim, num_passes=20000, print_loss=False):
         i_err3 = np.dot(activation_o, W3.T)
         w_err3 = np.dot(a2.T, activation_o)
         W3 -= epsilon * w_err3
-        b3 -= epsilon * np.sum(activation_o, axis=0, keepdims=True)
+        b3 -= epsilon * np.sum(activation_o, axis=0)
 
         activation_h2 = dSigmoid(z2) * i_err3
         i_err2 = np.dot(activation_h2, W2.T)
         w_err2 = np.dot(a1.T, activation_h2)
         W2 -= epsilon * w_err2
-        b2 -= epsilon * np.sum(activation_h2, axis=0, keepdims=True)
+        b2 -= epsilon * np.sum(activation_h2, axis=0)
 
-        activation_h1 = dSigmoid(z2) * i_err2
+        activation_h1 = dSigmoid(z1) * i_err2
         i_err1 = np.dot(activation_h1, W1.T)
         w_err1 = np.dot(X_train.T, activation_h1)
         W1 -= epsilon * w_err1
-        b1 -= epsilon * np.sum(activation_h1, axis=0, keepdims=True)
+        b1 -= epsilon * np.sum(activation_h1, axis=0)
 
 
 
@@ -300,7 +300,7 @@ def build_model(nn_hdim, num_passes=20000, print_loss=False):
 
 
 # Build a model with a 3-dimensional hidden layer
-model = build_model(10, print_loss=True)
+model = build_model(9, print_loss=True)
 leX = np.array([[1, 0], [0, 1], [0, 0], [1, 1]])
 # print(lambda x: predict(model, x))
 

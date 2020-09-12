@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import sys
+import argparse
 from utils import *
 
 np.random.seed(0)
@@ -75,16 +76,23 @@ def cost(layers, x, y):
     return rez
 
 def predict(layers):
-
     output = X_test
     output_activated = []
     for layer in layers:
         output_activated, output = layer.forward_propagation(output, output_activated)
-    # print(np.argmax(output, axis=1))
-    # print(np.argmax(y_test, axis=1))
+    return np.argmax(output, axis=1)
 
-def train(nn_hdim, num_passes=20000, print_loss=False):
+def create_options():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--cost", type=int, help="Choose when to print cost", default=1)
+    parser.add_argument("-zg", "--zoom", type=int, help="Choose where the plot start", default=0)
+    parser.add_argument("-pc", "--plot_cost", help="Plot a graph of the cost", action="store_true")
+    parser.add_argument("-pr", "--plot_result", help="Scatter the result", action="store_true")
+    parser.add_argument("-m", "--mute", help="Mute cost prints", action="store_true")
+    args = parser.parse_args()
+    return args
 
+def train(nn_hdim, num_passes, print_loss, cost_print, zoom, mute):
     layers = []
     layers.append(Layer(5, nn_hdim, sigmoid, dSigmoid))
     layers.append(Layer(nn_hdim, nn_hdim, sigmoid, dSigmoid))
@@ -103,19 +111,35 @@ def train(nn_hdim, num_passes=20000, print_loss=False):
             else:
                 error = layers[length - 1].backward_propagation(error, 0.01, None, False)
             length -= 1
-        # print('Epoch: ', i, '/', num_passes, ' - Training Cost = ', cost(layers, X_train, y_train), ' - Validation Cost = ',  cost(layers, X_test, y_test))
-        if (i >= 1000):
+        if (i >= zoom):
             training_error = cost(layers, X_train, y_train)
             validate_error = cost(layers, X_test, y_test)
             training_cost.append(training_error)
             validate_cost.append(validate_error)
-            # if (i % 1000 == 0):
-            print('Epoch: ', i, '/', num_passes, 'TC =', training_error, 'VC =', validate_error)
-    predict(layers)
-    return training_cost, validate_cost
+            if (i % cost_print == 0 and mute == True):
+                print('Epoch: ', i, '/', num_passes, 'TC =', training_error, 'VC =', validate_error)
 
+    return layers, training_cost, validate_cost
 
-training_errors, validate_errors = train(9)
-plt.plot(training_errors)
-plt.plot(validate_errors)
-plt.show()
+if __name__ == "__main__":
+    options = create_options()
+    if (options.cost < 1):
+        print('The cost must be higher than 0.')
+    layers, training_errors, validate_errors = train(9, 20000, True, options.cost, options.zoom, options.mute)
+
+    if (options.plot_cost == True):
+        plt.plot(training_errors)
+        plt.plot(validate_errors)
+        if (options.plot_result == False):
+            plt.show()
+    if (options.plot_result == True):
+        y = np.argmax(y_test, axis=1)
+        y_predicted = predict(layers)
+        fig, ax = plt.subplots()
+        ax.scatter(y, list(range(0, len(y))), color="red", alpha=0.5, label="True values")
+        ax.scatter(y_predicted, list(range(0, len(y))), color="blue", alpha=0.5, label="Predicted values")
+        plt.legend()
+        ax.set_xlabel('Patient number')
+        ax.set_ylabel('Result')
+        plt.xticks([0, 1], ['Begnin', 'Malignant'])
+        plt.show()
