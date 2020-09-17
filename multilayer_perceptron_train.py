@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import argparse
 from utils import *
+import os.path
+from os import path
 
 class Layer():
     def __init__(self, input_size, output_size, activation, activation_prime):
@@ -111,6 +113,9 @@ if __name__ == "__main__":
     options = create_options()
     if (options.file == None):
         print('Problem with the file')
+        exit(1)
+    elif (path.exists(options.file) == False):
+        print('Please choose an existing file')
         exit(1)
 
     X, y = process_file(options.file)
