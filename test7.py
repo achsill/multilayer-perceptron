@@ -151,7 +151,7 @@ def cross_ent(model, y, x):
     # print('___________')
     # print(y * np.log(a) + (1 - y) * np.log(1 - a))
     # print('__result___')
-    rez = -(1 / num_examples) * np.sum(y * np.log(a + 1e-15) + (1 - y) * np.log(1 - (a + 1e-15)))
+    rez = -(1 / len(x)) * np.sum(y * np.log(a + 1e-15) + (1 - y) * np.log(1 - (a + 1e-15)))
 
     # rez = -(1 / num_examples) * np.sum(np.dot(y, np.log(a.T[1])) + np.dot(1 - y, np.log(1 - (a.T[1]))))
 
@@ -174,8 +174,8 @@ def build_model(nn_hdim, num_passes=40000, print_loss=False):
     np.random.seed(0)
     W1 = np.random.randn(nn_input_dim, nn_hdim) / np.sqrt(nn_input_dim)
     b1 = np.zeros((1, nn_hdim))
-    W2 = np.random.randn(nn_hdim, nn_hdim) / np.sqrt(nn_hdim)
-    b2 = np.zeros((1, nn_hdim))
+    # W2 = np.random.randn(nn_hdim, nn_hdim) / np.sqrt(nn_hdim)
+    # b2 = np.zeros((1, nn_hdim))
     W3 = np.random.randn(nn_hdim, nn_output_dim) / np.sqrt(nn_hdim)
     b3 = np.zeros((1, nn_output_dim))
 
@@ -216,7 +216,7 @@ def build_model(nn_hdim, num_passes=40000, print_loss=False):
 # BackPropagation on reessaie
 
         # print('LA:', delta3)
-        activation_o = dCrossEntropy(delta3, y_train)
+        activation_o = dSoftmax(delta3, y_train)
         i_err3 = np.dot(activation_o, W3.T)
         w_err3 = np.dot(a2.T, activation_o)
         W3 -= epsilon * w_err3
@@ -292,7 +292,7 @@ def build_model(nn_hdim, num_passes=40000, print_loss=False):
         # Optionally print the loss.
         # This is expensive because it uses the whole dataset, so we don't want to do it too often.
         if print_loss and i % 1000 == 0:
-            print("Loss: ", i , '-', cross_ent(model, y_train, X_train))
+            print("Loss: ", i , '-', cross_ent(model, y_train, X_train), 'predicted: ', cross_ent(model, y_test, X_test))
             # print("Loss: ", i, " - ", calculate_loss(model))
             # print("Loss: ", i, " - ", cross_ent(model, y_train))
 

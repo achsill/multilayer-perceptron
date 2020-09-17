@@ -1,17 +1,4 @@
 import numpy as np
-# activation function and its derivative
-def tanh(x):
-    return np.tanh(x);
-
-def tanh_prime(x):
-    return 1-np.tanh(x)**2;
-
-# loss function and its derivative
-def mse(y_true, y_pred):
-    return np.mean(np.power(y_true-y_pred, 2));
-
-def mse_prime(y_true, y_pred):
-    return 2*(y_pred-y_true)/y_true.size;
 
 def sigmoid(x):
   return 1 / (1 + np.exp(-x))
@@ -22,14 +9,28 @@ def dSigmoid(Z):
     return dZ
 
 def softmax(X):
-    logits_exp = np.exp(X)
-    return logits_exp / np.sum(logits_exp, axis = 1, keepdims = True)
-    # exps = np.exp(X - np.max(X))
-    # return exps / np.sum(exps)
+    exps = np.exp(X - np.max(X, axis=1, keepdims=True))
+    return exps/np.sum(exps, axis=1, keepdims=True)
 
-def dSoftmax(softmax):
-    # s = softmax.reshape(-1,1)
-    return softmax * (1. - softmax)
+def dSoftmax(a, y):
+    n_samples = y.shape[0]
+    res = a - y
+    return res/n_samples
 
-def dCrossEntropy(a, y):
-     return a - y
+def cost(layers, x, y):
+    output = x
+    output_activated = []
+    for layer in layers:
+        output_activated, output = layer.forward_propagation(output, output_activated)
+
+    y_predicted = []
+    y_true = []
+    for i in range(0, y.shape[0]):
+            y_true.append(y[i][1])
+            y_predicted.append(output_activated[i][1])
+
+    y_predicted = np.array(y_predicted)
+    y_true = np.array(y_true)
+    rez = -(1 / y.shape[0]) * np.sum(np.nan_to_num(y_true * np.log(y_predicted) + (1 - y_true) * np.log(1 - (y_predicted))))
+
+    return rez
