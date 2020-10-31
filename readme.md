@@ -10,13 +10,6 @@ To generate random training and test datasets just run the evaluation.py script 
 
 *This script was provide in the subject, I did not code it,*
 
-Generate a dataset by running the evaluation.py script gave in the subject. 
-		(python3 evaluate_model/evaluation.py)
-2. Train the model by running train script on the data_training set, it will generate a nn_weights.py file that will be used by the predict program after.
-		(python3 multilayer_perceptron_train.py data_training.csv)
-3. Predict the values with the predict script, the output is the result of the binary cross-entropy loss
-		(python3 multilayer_perceptron_predict.py evaluate_model/data_test.csv)
-
 
 # Train
 The train script come with several options to better understand the result.
