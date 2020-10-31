@@ -17,7 +17,7 @@ Generate a dataset by running the evaluation.py script gave in the subject.
 		(python3 multilayer_perceptron_predict.py evaluate_model/data_test.csv)
 
 
-## Train
+# Train
 The train script come with several options to better understand the result.
 By default the program will print the TE (Training error) and VE (Validation error).
 
@@ -34,7 +34,7 @@ Validation error = result of the binary cross-entropy applied on the validation 
 **To run the script: 
 python3 multilayer_perceptron_train.py data_training.csv**
 
-## Predict
+# Predict
 The training scripts generates a file with the weights in it (nn_weights.py). It's this file that will be use by the predict script.
 
 **To run the script: 
