@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import pandas as pd
 import argparse
@@ -106,7 +107,7 @@ def train(X_test, X_train, y_test, y_train, nn_hdim, num_passes, print_loss, cos
             training_cost.append(training_error)
             validate_cost.append(validate_error)
             if (i % cost_print == 0 and mute == False):
-                print('Epoch: ', i, '/', num_passes, 'TC =', training_error, 'VC =', validate_error)
+                print('Epoch: ', i, '/', num_passes, 'TE =', training_error, 'VE =', validate_error)
     return layers, training_cost, validate_cost
 
 if __name__ == "__main__":
@@ -126,19 +127,30 @@ if __name__ == "__main__":
     layers, training_errors, validate_errors = train(X_test, X_train, y_test, y_train, 16, 20000, True, options.cost, options.zoom, options.mute)
 
     if (options.plot_cost == True):
-        plt.plot(training_errors)
-        plt.plot(validate_errors)
+        plt.xlabel('Iterations')
+        plt.ylabel('Cost')
+        plt.plot(training_errors, label='Training')
+        plt.plot(validate_errors, label='Validation')
+        plt.legend()
         if (options.plot_result == False):
             plt.show()
     if (options.plot_result == True):
         y = np.argmax(y_test, axis=1)
         y_predicted = predict(layers)
         fig, ax = plt.subplots()
-        ax.scatter(y, list(range(0, len(y))), color="red", alpha=0.5, label="True values")
-        ax.scatter(y_predicted, list(range(0, len(y))), color="blue", alpha=0.5, label="Predicted values")
-        plt.legend()
-        ax.set_xlabel('Patient number')
-        ax.set_ylabel('Result')
+        colors = []
+        for i in range(0, len(y_predicted)):
+            if (y_predicted[i] == y[i]):
+                colors.append('green')
+            else:
+                colors.append('red')
+        # ax.scatter(y, list(range(0, len(y))), color="red", alpha=0.5, label="True values")
+        ax.scatter(y_predicted, list(range(0, len(y))), c=colors, alpha=0.5)
+        false_predict = mpatches.Patch(color='red', label='False prediction')
+        good_predict = mpatches.Patch(color='green', label='Good prediction')
+        plt.legend(handles=[false_predict, good_predict], loc="lower center")
+        ax.set_xlabel('Result')
+        ax.set_ylabel('Patient number')
         plt.xticks([0, 1], ['Begnin', 'Malignant'])
         plt.show()
 
