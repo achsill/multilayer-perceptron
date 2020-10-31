@@ -9,6 +9,7 @@ Implemented a [neural network (ANN)](https://en.wikipedia.org/wiki/Multilayer_pe
 To generate random training and test datasets just run the evaluation.py script in the evaluate_model folder. 
 
 *This script was provide in the subject, I did not code it,*
+
 Generate a dataset by running the evaluation.py script gave in the subject. 
 		(python3 evaluate_model/evaluation.py)
 2. Train the model by running train script on the data_training set, it will generate a nn_weights.py file that will be used by the predict program after.
