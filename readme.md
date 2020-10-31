@@ -8,7 +8,7 @@ Implemented a [neural network (ANN)](https://en.wikipedia.org/wiki/Multilayer_pe
 # Generate random training/test datasets
 To generate random training and test datasets just run the evaluation.py script in the evaluate_model folder. 
 
-*This script was provide in the subject, I did not code it,*
+*This script was provide in the subject, I did not code it.*
 
 
 # Train
